@@ -1,0 +1,29 @@
+{
+  "name": "microsave-student-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for MicroSave Student hackathon project",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "node": "hardhat node",
+    "test": "hardhat test",
+    "clean": "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "ethers": "^6.8.0"
+  },
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "hardhat",
+    "microsave",
+    "hackathon"
+  ],
+  "author": "MicroSave Student Hackathon Team",
+  "license": "MIT"
+}
