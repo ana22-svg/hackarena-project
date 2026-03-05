@@ -29,7 +29,7 @@ const floatKeyframes = `
   }
 `;
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onGoRegister }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,13 +44,26 @@ const handleSubmit = async () => {
     return;
   }
   setLoading(true);
-  // Bypass API — go straight to dashboard
-  setTimeout(() => {
+  try {
+    const res = await fetch("http://localhost:5000/api/users/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem("userId", data.data.id);
+      localStorage.setItem("userName", data.data.name);
+      if (onLogin) onLogin({ name: data.data.name, id: data.data.id });
+    } else {
+      setError(data.error || "Invalid credentials.");
+    }
+  } catch (err) {
+    setError("Cannot reach server. Is backend running on port 5000?");
+  } finally {
     setLoading(false);
-    if (onLogin) onLogin({ name: "Alex Chen", email });
-  }, 800);
+  }
 };
-
   return (
     <>
       <style>{floatKeyframes}</style>
@@ -339,11 +352,15 @@ const handleSubmit = async () => {
               margin: 0,
             }}>
               New to CoinStash?{" "}
-              <a href="/register" style={{
-                color: "#00ff88",
-                textDecoration: "none",
-                fontWeight: 500,
-              }}>Create an account</a>
+              <button
+                onClick={onGoRegister}
+                style={{
+                  background: "none", border: "none",
+                  color: "#00ff88", fontSize: "13px",
+                  fontWeight: 500, cursor: "pointer",
+                  padding: 0, fontFamily: "'DM Sans', sans-serif",
+                }}
+              >Create an account</button>
             </p>
           </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
+import Register from './components/Register';
 
 /* ═══════════════════════════════════════════════
    INJECT GLOBAL STYLES
@@ -804,6 +805,18 @@ function Simulate({ d, onSim }) {
 }
 
 /* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function getCatIcon(category) {
+  const icons = {
+    'fast_food':'🍔','food':'🍔','coffee':'☕',
+    'entertainment':'🎬','shopping':'🛍️','groceries':'🛒',
+    'education':'📚','transport':'🚗','other':'💳',
+  };
+  return icons[(category||'').toLowerCase()] || '💳';
+}
+
+/* ═══════════════════════════════════════════════
    ROOT APP
 ═══════════════════════════════════════════════ */
 export default function App() {
@@ -812,33 +825,155 @@ export default function App() {
   const [data, setData]         = useState(INIT);
   const [toast, setToast]       = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
   const [userName, setUserName] = useState('');
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    if (!loggedIn || !userId) return;
+    const fetchRealData = async () => {
+      try {
+        const [userRes, txRes, tsRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/users/${userId}`),
+          fetch(`http://localhost:5000/api/transactions/${userId}`),
+          fetch(`http://localhost:5000/api/users/${userId}/trust-score`),
+        ]);
+        const userData = await userRes.json();
+        const txData   = await txRes.json();
+        const tsData   = await tsRes.json();
+
+        if (userData.success) {
+          setData(prev => ({
+            ...prev,
+            name:        userData.data.name       || prev.name,
+            totalSaved:  parseFloat(userData.data.totalSaved) || prev.totalSaved,
+            vaultBalance:parseFloat(userData.data.totalSaved) || prev.vaultBalance,
+            trustScore:  userData.data.trustScore  || prev.trustScore,
+            streak:      userData.data.currentStreak || prev.streak,
+          }));
+          setUserName(userData.data.name || '');
+        }
+
+        if (txData.success && txData.data.length > 0) {
+          const txns = txData.data.map(t => ({
+            id:      t.id,
+            name:    t.merchantName,
+            cat:     t.category,
+            icon:    getCatIcon(t.category),
+            amount:  parseFloat(t.originalAmount),
+            rounded: parseFloat(t.roundedAmount),
+            saved:   parseFloat(t.savedAmount),
+            mult:    parseFloat(t.roundUpMultiplier),
+            date:    new Date(t.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+            time:    new Date(t.createdAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),
+          }));
+          setData(prev => ({
+            ...prev,
+            recentTxns:    txns.slice(0,5),
+            allTxns:       txns,
+            roundUpsToday: txns.slice(0,4).reduce((s,t)=>s+t.saved,0),
+            todayCount:    txns.slice(0,4).length,
+          }));
+        }
+
+        if (tsData.success) {
+          setData(prev => ({ ...prev, trustScore: tsData.data.trustScore || prev.trustScore }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch real data, using mock:', err);
+      }
+    };
+    fetchRealData();
+  }, [loggedIn]);
+
   if (!mounted) return null;
 
   // ── Show Login if not authenticated ──────────────
   if (!loggedIn) {
+  if (showRegister) {
     return (
       <>
-        <InjectStyles />
-        <Login onLogin={(user) => {
-          setUserName(user.name || 'Alex Chen');
-          setData(prev => ({ ...prev, name: user.name || prev.name }));
-          setLoggedIn(true);
-        }} />
+        <InjectStyles/>
+        <Register
+          onRegister={(user) => {
+            setData(prev => ({ ...prev, name: user.name || prev.name }));
+            setUserName(user.name || '');
+            setLoggedIn(true);
+          }}
+          onGoLogin={() => setShowRegister(false)}
+        />
       </>
     );
+  }
+  return (
+    <>
+      <InjectStyles/>
+      <Login
+        onLogin={(user) => {
+          setData(prev => ({ ...prev, name: user.name || prev.name }));
+          setUserName(user.name || '');
+          setLoggedIn(true);
+        }}
+        onGoRegister={() => setShowRegister(true)}
+      />
+    </>
+  );
   }
 
   // ── Logout handler ────────────────────────────────
   const handleLogout = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
     setLoggedIn(false);
     setUserName('');
     setPage('dashboard');
   };
 
-  const handleSim = (tx) => {
+  const handleSim = async (tx) => {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      try {
+        const res = await fetch('http://localhost:5000/api/transactions/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          const t = result.data.transaction;
+          const newTx = {
+            id:      t.id,
+            name:    t.merchantName,
+            cat:     t.category,
+            icon:    getCatIcon(t.category),
+            amount:  parseFloat(t.originalAmount),
+            rounded: parseFloat(t.roundedAmount),
+            saved:   parseFloat(t.savedAmount),
+            mult:    parseFloat(t.roundUpMultiplier),
+            date:    'Just now',
+            time:    'Just now',
+          };
+          setData(prev => ({
+            ...prev,
+            totalSaved:        parseFloat((prev.totalSaved + newTx.saved).toFixed(2)),
+            vaultBalance:      parseFloat((prev.vaultBalance + newTx.saved).toFixed(2)),
+            roundUpsToday:     parseFloat((prev.roundUpsToday + newTx.saved).toFixed(2)),
+            todayCount:        prev.todayCount + 1,
+            trustScore:        result.data.trustScore || prev.trustScore,
+            educationEligible: parseFloat((prev.educationEligible + newTx.saved * 0.8).toFixed(2)),
+            recentTxns: [newTx, ...prev.recentTxns.slice(0,4)],
+            allTxns:    [newTx, ...prev.allTxns],
+          }));
+          setToast(`+$${newTx.saved.toFixed(2)} from ${newTx.icon} ${newTx.name} → Vault`);
+          return;
+        }
+      } catch (err) {
+        console.error('Backend simulate failed, using mock:', err);
+      }
+    }
+    // Fallback to mock
     if (!tx) {
       const o = SIM_OPTS[Math.floor(Math.random()*SIM_OPTS.length)];
       const m = MULT[o.cat]||1;

@@ -2,6 +2,22 @@ const { User, Transaction } = require('../models');
 const TrustScoreService = require('../services/TrustScoreService');
 
 const userController = {
+  // Login user
+  async login(req, res) {
+    try {
+      const { email, password } = req.body;
+      if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+
+      const user = await User.findOne({ where: { email } });
+      if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+      // No password hashing yet — direct match
+      res.json({ success: true, data: user });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
+
   // Create a new user
   async createUser(req, res) {
     try {
@@ -34,10 +50,7 @@ const userController = {
     }
   },
 
-  /**
-   * GET /api/users/:id/trust-score
-   * Returns the user's trust score with full breakdown.
-   */
+  // Get trust score
   async getTrustScore(req, res) {
     try {
       const user = await User.findByPk(req.params.id);
