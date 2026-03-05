@@ -6,8 +6,8 @@
 
 ## Team Details
 
-**Team Name: Shadow Ledgers**
-**Members: 3**
+**Team Name: Shadow Ledgers**  
+**Members: 3**  
 **Domain: Fintech & Money Management**
 
 ---
