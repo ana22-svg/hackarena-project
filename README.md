@@ -120,6 +120,14 @@ npm start
 App runs at `http://localhost:3000`
 
 ---
+Snippets from the site:
+
+<img width="1919" height="978" alt="Screenshot 2026-03-06 021036" src="https://github.com/user-attachments/assets/26690620-aae0-4743-90bd-1d8f69f0818a" />
+<img width="1919" height="978" alt="Screenshot 2026-03-06 021036" src="https://github.com/user-attachments/assets/26690620-aae0-4743-90bd-1d8f69f0818a" />
+<img width="1919" height="970" alt="Screenshot 2026-03-06 021054" src="https://github.com/user-attachments/assets/7d682ba6-725e-4a5d-b3f7-df6193da9f6f" />
+<img width="1919" height="970" alt="Screenshot 2026-03-06 021054" src="https://github.com/user-attachments/assets/7d682ba6-725e-4a5d-b3f7-df6193da9f6f" />
+<img width="1919" height="979" alt="Screenshot 2026-03-06 021110" src="https://github.com/user-attachments/assets/41aee11f-866f-4104-a65a-5384274f6473" />
+<img width="1919" height="979" alt="Screenshot 2026-03-06 021110" src="https://github.com/user-attachments/assets/41aee11f-866f-4104-a65a-5384274f6473" />
 
 ## API Endpoints
 
@@ -152,15 +160,6 @@ App runs at `http://localhost:3000`
 
 ---
 
-## Hackathon Rules Compliance
-
-- ✅ All development done **during** the hackathon (5th–6th March)
-- ✅ Code pushed **regularly** with tracked commit history
-- ✅ Only open-source libraries with compatible licenses used and credited above
-- ✅ Single submission per team
-- ✅ All 3 members present both days
-
----
 
 ## Team — Shadow Ledgers
 
