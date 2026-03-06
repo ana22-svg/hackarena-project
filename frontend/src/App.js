@@ -559,7 +559,25 @@ function TrustScore({ d }) {
 /* ═══════════════════════════════════════════════
    PAGE: SMART VAULT
 ═══════════════════════════════════════════════ */
-function SmartVault({ d }) {
+function SmartVault({ d, onDeposit }) {
+  const [selected, setSelected]     = useState(null);
+  const [custom, setCustom]         = useState('');
+  const [depositing, setDepositing] = useState(false);
+  const [lastDeposit, setLastDeposit] = useState(null);
+
+  const handleDeposit = () => {
+    const amount = parseFloat(custom) || selected;
+    if (!amount || amount <= 0) return;
+    setDepositing(true);
+    setTimeout(() => {
+      setLastDeposit(amount);
+      setDepositing(false);
+      setCustom('');
+      setSelected(null);
+      if (onDeposit) onDeposit(amount);
+    }, 1200);
+  };
+
   const gp = Math.min((d.educationEligible/d.savingsGoal)*100,100);
   return (
     <div>
@@ -618,12 +636,35 @@ function SmartVault({ d }) {
         <Box delay={0.30}>
           <BoxLabel>Quick Deposit</BoxLabel>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:11 }}>
-            {['$5','$10','$25','$50'].map(v=>(
-              <button key={v} className="cat-btn" style={{ background:'#111b27', border:'1px solid #1e2a38', color:'#94a3b8', borderRadius:8, padding:'10px', cursor:'pointer', fontSize:14, fontWeight:500, transition:'all 0.14s' }}>{v}</button>
+            {[5,10,25,50].map(v=>(
+              <button key={v} onClick={()=>{ setSelected(v); setCustom(''); }}
+                className="cat-btn"
+                style={{ background:selected===v?'rgba(34,197,94,0.1)':'#111b27', border:selected===v?'1px solid #22c55e':'1px solid #1e2a38', color:selected===v?'#22c55e':'#94a3b8', borderRadius:8, padding:'10px', cursor:'pointer', fontSize:14, fontWeight:500, transition:'all 0.14s' }}>
+                ${v}
+              </button>
             ))}
           </div>
-          <input placeholder="Custom amount..." style={{ width:'100%', background:'#080c12', border:'1px solid #1e2a38', borderRadius:8, padding:'10px 12px', color:'#e2e8f0', fontSize:13, outline:'none', marginBottom:11, fontFamily:"'DM Sans',sans-serif" }}/>
-          <button className="green-btn" style={{ width:'100%', background:'#22c55e', color:'#000', border:'none', borderRadius:9, padding:'12px', fontWeight:700, fontSize:14, cursor:'pointer', transition:'background 0.15s' }}>↓ Deposit to Vault</button>
+          <input
+            value={custom}
+            onChange={e=>{ setCustom(e.target.value); setSelected(null); }}
+            placeholder="Custom amount..."
+            type="number"
+            min="0"
+            style={{ width:'100%', background:'#080c12', border:'1px solid #1e2a38', borderRadius:8, padding:'10px 12px', color:'#e2e8f0', fontSize:13, outline:'none', marginBottom:11, fontFamily:"'DM Sans',sans-serif", boxSizing:'border-box' }}
+          />
+          <button
+            className="green-btn"
+            onClick={handleDeposit}
+            disabled={depositing || (!selected && !custom)}
+            style={{ width:'100%', background:depositing?'#14532d':'#22c55e', color:depositing?'#22c55e':'#000', border:'none', borderRadius:9, padding:'12px', fontWeight:700, fontSize:14, cursor:depositing?'not-allowed':'pointer', transition:'background 0.15s', opacity:(!selected && !custom)?0.5:1 }}>
+            {depositing ? '⏳ Depositing to blockchain...' : '↓ Deposit to Vault'}
+          </button>
+          {lastDeposit && (
+            <div className="si" style={{ marginTop:12, background:'rgba(34,197,94,0.07)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:9, padding:'12px', textAlign:'center' }}>
+              <div style={{ color:'#22c55e', fontWeight:700, fontSize:15 }}>✅ ${fmt(lastDeposit)} Deposited!</div>
+              <div style={{ color:'#334155', fontSize:12, marginTop:4 }}>→ Confirmed on blockchain vault</div>
+            </div>
+          )}
         </Box>
       </div>
     </div>
@@ -999,7 +1040,15 @@ export default function App() {
     dashboard:    <Dashboard    d={data} onSim={()=>handleSim(null)}/>,
     transactions: <Transactions d={data}/>,
     trustscore:   <TrustScore   d={data}/>,
-    vault:        <SmartVault   d={data}/>,
+    vault:        <SmartVault   d={data} onDeposit={(amount) => {
+      setData(prev => ({
+        ...prev,
+        vaultBalance:      parseFloat((prev.vaultBalance + amount).toFixed(2)),
+        educationEligible: parseFloat((prev.educationEligible + amount).toFixed(2)),
+        totalSaved:        parseFloat((prev.totalSaved + amount).toFixed(2)),
+      }));
+      setToast(`💼 $${amount.toFixed(2)} deposited to Smart Vault!`);
+    }}/>,
     learn:        <MicroLearn   d={data}/>,
     simulate:     <Simulate     d={data} onSim={handleSim}/>,
   };
