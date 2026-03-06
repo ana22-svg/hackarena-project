@@ -29,7 +29,6 @@ Students spend impulsively on small purchases — coffee, fast food, streaming �
 - **Smart Round-Up Engine** — category-based multipliers (Fast Food 2×, Entertainment 2×, Education 0.5×) applied automatically on every transaction
 - **Trust Score System** — a 0–1000 decentralised credibility score based on savings frequency, volume, streaks, and lesson completion. Powers micro-loan and grant eligibility
 - **Blockchain Vault** — funds locked in a Solidity smart contract (Hardhat/local testnet) with penalty-free withdrawal for verified educational expenses
-- **AI Nudge Agent** — OpenAI-powered agent that sends behavioural nudges based on spending patterns
 - **MicroLearn Streak System** — financial literacy lessons unlocked by Trust Score milestones, each worth +20 points
 - **Live Dashboard** — real-time savings tracker, transaction ledger, category breakdown, savings growth chart, and vault progress
 
