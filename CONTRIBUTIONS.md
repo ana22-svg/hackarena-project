@@ -255,7 +255,28 @@ updatedAt: TIMESTAMP
   "error": "message (if failed)"
 }
 ```
+##  The Integrated Pipeline: How It All Works
 
+The core of the application is the `POST /api/transactions/simulate` endpoint, which integrates all three issues into a single, atomic pipeline:
+
+1.  **Request In:** Frontend sends `{ "userId": "some-uuid" }`.
+2.  **Controller (`transactionController.js`):** The `simulateTransaction` method is invoked.
+3.  **Issue #1:** It calls `TransactionService.generateMockTransaction()` to get a raw purchase object (e.g., `{ merchantName: 'Starbucks', originalAmount: 4.73, category: 'food' }`).
+4.  **Issue #2:** It passes this object to `RoundUpService.calculateRoundUp()`.
+    -   The service confirms the category is 'food'.
+    -   It calculates the base round-up: $5.00 - $4.73 = $0.27.
+    -   It applies the 'food' multiplier: $0.27 * 2 = $0.54 (`savedAmount`).
+    -   It calculates the final purchase amount: $4.73 + $0.54 = $5.27 (`roundedAmount`).
+5.  **Database Write:** The controller creates a new record in the `transactions` table with all this data.
+6.  **User Update:** The controller increments the `totalSaved` field on the `users` table by $0.54.
+7.  **Issue #3:** The controller now triggers the trust score engine.
+    -   It calls `TrustScoreService.updateStreak()` to check and update the user's saving streak.
+    -   It fetches all of the user's transactions from the database.
+    -   It calls `TrustScoreService.calculate()`, which computes all five-dimension scores and the final weighted score.
+8.  **Database Write:** The controller updates the `trustScore` and `lastScoreUpdate` fields on the `users` table.
+9.  **Response Out:** The controller sends a `201 Created` response to the frontend containing the newly created transaction, the round-up details, the new trust score, and the full score breakdown.
+
+This entire sequence happens in a single API call, providing a powerful, real-time feedback loop for the user.
 ---
 
 ## Testing Performed
